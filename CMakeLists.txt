@@ -6,14 +6,14 @@ set(CMAKE_CXX_STANDARD 20)
 add_definitions(-D_USE_MATH_DEFINES)
 
 set(THIRD_PARTY_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/third-party/glfw/include"
-                                    "${CMAKE_CURRENT_SOURCE_DIR}/third-party/glew/include"
+                                    "${CMAKE_CURRENT_SOURCE_DIR}/third-party/glew-cmake/include"
                                     "${CMAKE_CURRENT_SOURCE_DIR}/third-party/imgui")
 set(THIRD_PARTY_LIBRARIES glfw libglew_static)
 set(AI_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/src")
 
 add_definitions(-DGLEW_STATIC)
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/third-party/glfw" glfw)
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/third-party/glew" glew)
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/third-party/glew-cmake" glew)
 
 file(GLOB imgui
      "third-party/imgui/*.cpp"

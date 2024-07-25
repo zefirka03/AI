@@ -62,7 +62,7 @@ int main(){
     network.addLayer(new Sigmoid());
     network.addLayer(new Dense(12, 1, new SGD()));
 
-    network.train(data, 300000);
+    network.train(data, 100000);
     std::vector<vec<double>> Y_nn;
     for (int i = 0; i < X.size(); i++) {
         Y_nn.push_back(network.predict(X[i]));
