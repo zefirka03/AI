@@ -1,0 +1,2 @@
+add_subdirectory(sin_approximation)
+add_subdirectory(image_clustering)
