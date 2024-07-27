@@ -1,13 +1,14 @@
-#include "linal.h"
-#include "NN.h"
 #include <cmath>
 #include <iostream>
 
+#include <GLFW/glfw3.h>
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
-#include <GLFW/glfw3.h> // Will drag system OpenGL headers
 #include "implot.h"
+
+#include "linalg.h"
+#include "NN.h"
 
 
 void RenderData(std::vector<vec<double>> const& X_real, std::vector<vec<double>> const& Y_real,
@@ -26,7 +27,6 @@ void RenderData(std::vector<vec<double>> const& X_real, std::vector<vec<double>>
         y_nn.push_back(Y_nn[i].data()[0]);
     }
 
-
     if (ImPlot::BeginPlot("Shaded Plots")) {
         ImPlot::PlotLine("Real", x_r.data(), y_r.data(), x_r.size());
         ImPlot::PlotLine("NN", x_nn.data(), y_nn.data(), x_nn.size());
@@ -36,6 +36,7 @@ void RenderData(std::vector<vec<double>> const& X_real, std::vector<vec<double>>
 
 
 int main(){
+    // Data that we will approximate
     std::vector<vec<double>> X;
     std::vector<vec<double>> Y;
     {
@@ -48,32 +49,38 @@ int main(){
             Y.emplace_back(b);
         }
     }
+
+    // Z-Score normalize 
     vec<double> mX = mean(X);
     vec<double> stdX = stdev(X);
-    mX.print();
-    for (int i = 0; i < X.size(); ++i) {
+    for (int i = 0; i < X.size(); ++i) 
         X[i] = (X[i] - mX) / stdX;
-    }
+
+    // Load data to Data object
     Data<double> data;
     data.load(X, Y);
 
+    // NN initialization
     Network network(new LossMSE());
     network.addLayer(new Dense(1, 12, new SGD()));
     network.addLayer(new Sigmoid());
     network.addLayer(new Dense(12, 1, new SGD()));
 
+    // Train
     network.train(data, 100000);
+
+    // Predict
     std::vector<vec<double>> Y_nn;
-    for (int i = 0; i < X.size(); i++) {
+    for (int i = 0; i < X.size(); i++)
         Y_nn.push_back(network.predict(X[i]));
-    }
- 
 
+    ///////////////////////////////////////////////////
 
+    // Rendering stuff
     if (!glfwInit())
         return 1;
 
-    GLFWwindow* window = glfwCreateWindow(1280, 720, "Dear ImGui GLFW+OpenGL3 example", nullptr, nullptr);
+    GLFWwindow* window = glfwCreateWindow(1280, 720, "Sin approximation", nullptr, nullptr);
     if (window == nullptr)
         return 1;
     glfwMakeContextCurrent(window);
@@ -82,8 +89,8 @@ int main(){
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO(); (void)io;
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad; 
     ImGui::StyleColorsDark();
 
     ImPlot::CreateContext();
@@ -102,10 +109,9 @@ int main(){
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        ImGui::Begin("Hello, rr!");
-        RenderData(X,Y, X, Y_nn);
+        ImGui::Begin("Data:");
+        RenderData(X, Y, X, Y_nn);
         ImGui::End();
-
 
         // Rendering
         ImGui::Render();

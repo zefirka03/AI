@@ -1,15 +1,17 @@
-#include "linal.h"
-#include "NN.h"
 #include <cmath>
 #include <iostream>
 #include <fstream>
+#include <GLFW/glfw3.h>
+#include <GL/glew.h>
 
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
-#include <GL/glew.h>
-#include <GLFW/glfw3.h> // Will drag system OpenGL headers
 #include "implot.h"
+
+#include "linalg.h"
+#include "NN.h"
+
 
 int reverseInt(int i)
 {
@@ -22,6 +24,7 @@ int reverseInt(int i)
 
     return ((int)c1 << 24) + ((int)c2 << 16) + ((int)c3 << 8) + c4;
 }
+
 std::vector<vec<double>> read_mnist(const char* path){
     std::ifstream file(path, std::ios_base::binary);
     std::vector<vec<double>> data;

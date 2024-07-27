@@ -4,3 +4,6 @@
 [submodule "third-party/glew-cmake"]
 	path = third-party/glew-cmake
 	url = https://github.com/Perlmint/glew-cmake
+[submodule "third-party/linalg"]
+	path = third-party/linalg
+	url = https://github.com/zefirka03/linalg
