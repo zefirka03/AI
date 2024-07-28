@@ -1,7 +1,7 @@
 #pragma once
 #include <vector>
 #include <random>
-#include "linal.h"
+#include "linalg.h"
 
 template<class Type_>
 class Data {

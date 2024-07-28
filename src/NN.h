@@ -4,7 +4,7 @@
 #include <cmath>
 #include <random>
 #include <chrono>       // std::chrono::system_clock
-#include "linal.h"
+#include "linalg.h"
 #include "Data.h"
 
 
