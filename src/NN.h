@@ -72,8 +72,9 @@ public:
         mat<double> const& grad_weights,
         vec<double> const& grad_biases
     ) override {
-        v_weights = (1.0 - b1) * grad_weights + b1 * v_weights;
-        v_biases = (1.0 - b1) * grad_biases + b1 * v_biases;
+        // v_weights = (1.0 - b1) * grad_weights + b1 * v_weights
+        v_weights = grad_weights + b1 * (v_weights - grad_weights);
+        v_biases = grad_biases + b1 * (v_biases - grad_biases);
 
         weights = weights - learning_rate * v_weights;
         biases = biases - learning_rate * v_biases;
@@ -265,10 +266,10 @@ private:
     std::vector<Layer*> m_layers;
 
     std::vector<vec<double>> _forward(vec<double> const& X){
-        std::vector<vec<double>> out;
-        out.emplace_back(X);
-        for(int i=0; i < m_layers.size(); ++i)
-           out.emplace_back(m_layers[i]->forward(out.back()));
+        std::vector<vec<double>> out(m_layers.size() + 1);
+        out[0] = X;
+        for(int i = 0; i < m_layers.size(); ++i)
+            out[i + 1] = m_layers[i]->forward(out[i]);
         return out;
     }
 
@@ -288,15 +289,15 @@ public:
 
     void train(Data<double>& data, int epochs = 10){
         double loss = 0;
-        int b_size = 32;
+        int b_size = 64;
 
         double m_loss = 0;
         int m_l_count = 0;
 
+        auto& l_data = data.getData();
         for (int ep = 0; ep < epochs; ++ep) {
             loss = 0;
             data.shuffle();
-            auto& l_data = data.getData();
             for (int it = 0; it < b_size; ++it) {
                 auto A = _forward(l_data[it].first);
                 vec<double> curr_backward = m_loss_func->getLossGrad(A.back(), l_data[it].second);
