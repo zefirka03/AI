@@ -73,8 +73,8 @@ public:
         vec<double> const& grad_biases
     ) override {
         // v_weights = (1.0 - b1) * grad_weights + b1 * v_weights
-        v_weights = grad_weights + b1 * (v_weights - grad_weights);
-        v_biases = grad_biases + b1 * (v_biases - grad_biases);
+        v_weights = b1 * (v_weights - grad_weights) + grad_weights;
+        v_biases = b1 * (v_biases - grad_biases) + grad_biases;
 
         weights = weights - learning_rate * v_weights;
         biases = biases - learning_rate * v_biases;

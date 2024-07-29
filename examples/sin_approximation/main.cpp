@@ -67,7 +67,7 @@ int main(){
     network.addLayer(new Dense(12, 1, new SGD()));
 
     // Train
-    network.train(data, 100000);
+    network.train(data, 200000);
 
     // Predict
     std::vector<vec<double>> Y_nn;
