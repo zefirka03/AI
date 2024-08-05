@@ -39,17 +39,20 @@ class Layer {
 public:
     virtual vec<double> forward(vec<double> const& input) = 0;
     virtual vec<double> backward(vec<double> const& input, vec<double> const& grad_output) = 0;
+    virtual void update() = 0;
 };
 
 
 class Optimizer {
 public:
     virtual void init(int input_units, int output_units) = 0;
-    virtual void optimize(
-        mat<double>& weights, 
-        vec<double>& biases, 
+    virtual void accumulate(
         mat<double> const& grad_weights, 
         vec<double> const& grad_biases
+    ) = 0;
+    virtual void apply(
+        mat<double>& weights,
+        vec<double>& biases
     ) = 0;
 };
 
@@ -65,23 +68,33 @@ public:
     void init(int input_units, int output_units) {
         v_weights.reshape(input_units, output_units);
         v_biases.reshape(output_units);
+
+        v_weights.fill(0.0);
+        v_biases.fill(0.0);
     }
-    void optimize(
-        mat<double>& weights,
-        vec<double>& biases,
+
+    void accumulate(
         mat<double> const& grad_weights,
         vec<double> const& grad_biases
     ) override {
         // v_weights = (1.0 - b1) * grad_weights + b1 * v_weights
-        v_weights = b1 * (v_weights - grad_weights) + grad_weights;
-        v_biases = b1 * (v_biases - grad_biases) + grad_biases;
+        v_weights = v_weights + b1 * (v_weights - grad_weights) + grad_weights;
+        v_biases = v_biases + b1 * (v_biases - grad_biases) + grad_biases;
+    }
 
+    void apply(
+        mat<double>& weights,
+        vec<double>& biases
+    ) override {
         weights = weights - learning_rate * v_weights;
         biases = biases - learning_rate * v_biases;
+
+        v_weights.fill(0.0);
+        v_biases.fill(0.0);
     }
 };
 
-
+/*
 class Adam : public Optimizer {
 private:
     mat<double> v_weights;
@@ -128,6 +141,7 @@ public:
         it++;
     }
 };
+*/
 
 
 class ReLU : public Layer {
@@ -141,6 +155,8 @@ public:
             obj = obj > 0;
         });;
     }
+
+    void update() {}
 };
 
 
@@ -155,6 +171,8 @@ public:
             obj = obj > 0;
             });;
     }
+
+    void update() {}
 };
 
 
@@ -171,6 +189,8 @@ public:
             obj = (1.0 / (1.0 + exp(-obj))) * (1.0 - (1.0 / (1.0 + exp(-obj))));
         });
     }
+
+    void update() {}
 };
 
 
@@ -201,9 +221,13 @@ public:
         auto grad_weights = input.transposed() * grad_output;
         auto grad_biases = grad_output;
 
-        m_optimizer->optimize(weights, biases, grad_weights, grad_biases);
+        m_optimizer->accumulate(grad_weights, grad_biases);
 
         return grad_input;
+    }
+
+    void update() override {
+        m_optimizer->apply(weights, biases);
     }
 
     ~Dense() {
@@ -287,9 +311,8 @@ public:
         m_layers.push_back(layer);
     }
 
-    void train(Data<double>& data, int epochs = 10){
+    void train(Data<double>& data, int epochs = 10, int batches = 32){
         double loss = 0;
-        int b_size = 64;
 
         double m_loss = 0;
         int m_l_count = 0;
@@ -298,17 +321,21 @@ public:
         for (int ep = 0; ep < epochs; ++ep) {
             loss = 0;
             data.shuffle();
-            for (int it = 0; it < b_size; ++it) {
+
+            for (int it = 0; it < batches; ++it) {
                 auto A = _forward(l_data[it].first);
-                vec<double> curr_backward = m_loss_func->getLossGrad(A.back(), l_data[it].second);
+                vec<double> curr_backward = m_loss_func->getLossGrad(A.back(), l_data[it].second) / double(batches);
                 loss += m_loss_func->getLoss(A.back(), l_data[it].second);
                 for (int i = m_layers.size() - 1; i >= 0; --i)
                     curr_backward = m_layers[i]->backward(A[i], curr_backward);
             }
-            loss /= b_size;
+            for (int i = m_layers.size() - 1; i >= 0; --i)
+                 m_layers[i]->update();
+
+            loss /= batches;
             m_loss = (m_loss * m_l_count + loss)/(double)(m_l_count+1);
             m_l_count++;
-            if (ep % 100 == 0) {
+            if (ep % 1000 == 0) {
                 printf("Ep: %d, loss: %lf, mloss: %lf\n", ep, loss, m_loss);
                 //if (m_loss <= 0.0001) break;
                 m_l_count = 0;
